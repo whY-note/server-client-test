@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.hdf5
+*.egg-info/
+*.csv
+.vscode/
