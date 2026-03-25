@@ -355,7 +355,7 @@ async def run_web(host, port, packaging_type, test_file_path, is_jpeg: bool):
             right_arm_dataset = f["joint_action/right_arm"][:]
             right_gripper_dataset = f["joint_action/right_gripper"][:]
 
-            test_num = len(rgb_dataset_head_camera)
+            test_num = min(100, len(rgb_dataset_head_camera))
             print("test_num: ", test_num)
 
             decode_time_total = 0.0
