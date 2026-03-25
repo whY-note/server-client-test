@@ -1,5 +1,6 @@
 from src.utils.utils import load_yaml, get_config_path, list_test_config_names
 from src.api.run_client import run_client, input_user_name
+from src.api.control_plane import request_test_session
 import argparse
 
 def parse_args():
@@ -36,7 +37,12 @@ def parse_args():
         type=int,
         required=False,
         default=9000,
-        help="Server port to connect to"
+        help="Server control port to connect to"
+    )
+    parser.add_argument(
+        "--direct",
+        action="store_true",
+        help="Connect directly to a pre-started data server without control plane"
     )
 
     args = parser.parse_args()
@@ -49,6 +55,7 @@ def run_single_test(
     port: int,
     user_name: str | None = None,
     connect_retry_seconds: float = 0,
+    direct: bool = False,
 ):
     config_path = get_config_path(config_name)
     print(f"Loading config from {config_path}")
@@ -61,12 +68,34 @@ def run_single_test(
     print("Protocol: ", protocol)
     print("Packaging type: ", packaging_type)
     print("Host: ", host)
-    print("Port: ", port)
+    print("Control port: ", port)
+
+    if direct:
+        data_port = port
+    else:
+        response = request_test_session(
+            host,
+            port,
+            {
+                "type": "start_test",
+                "config_name": config_name,
+                "config": config,
+            },
+        )
+
+        if response.get("status") != "ready":
+            raise RuntimeError(
+                f"Control plane failed: {response.get('error_type', 'UnknownError')}: "
+                f"{response.get('error_message', response)}"
+            )
+
+        data_port = response["data_port"]
+        print(f"Worker ready on data port: {data_port}")
 
     run_client(
         protocol,
         host,
-        port,
+        data_port,
         packaging_type,
         user_name=user_name,
         connect_retry_seconds=connect_retry_seconds,
@@ -95,6 +124,7 @@ if __name__ == "__main__":
                 port=args.port,
                 user_name=user_name,
                 connect_retry_seconds=30,
+                direct=args.direct,
             )
     else:
         if args.test is None:
@@ -107,4 +137,5 @@ if __name__ == "__main__":
             host=args.host,
             port=args.port,
             user_name=args.user_name,
+            direct=args.direct,
         )

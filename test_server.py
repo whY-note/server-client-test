@@ -1,11 +1,14 @@
 from src.utils.utils import load_yaml, get_config_path, list_test_config_names
 from src.api.run_server import run_udp, run_tcp, run_web
+from src.api.control_plane import recv_json_message, send_json_message, get_free_port
 import asyncio
 import os
 import pandas as pd
 import argparse
 import traceback
 import sys
+import socket
+import threading
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Test server script")
@@ -53,7 +56,7 @@ def record_result(res, config_name):
     df = pd.DataFrame([res])
 
     # CSV 路径
-    file_path = os.path.join(dir_path, f"{config_name}.csv")
+    file_path = os.path.join(dir_path, "all_tests.csv")
 
     # 如果文件已存在，则对齐列后整体重写，避免新旧 schema 混乱
     if os.path.exists(file_path):
@@ -66,10 +69,14 @@ def record_result(res, config_name):
         df.to_csv(file_path, mode="w", header=True, index=False)
 
 
-def run_single_test(config_name: str, host: str, port: int):
-    config_path = get_config_path(config_name)
-    print(f"Loading config from {config_path}")
-    config = load_yaml(config_path)
+def run_single_test(config_name: str, host: str, port: int, config_override: dict | None = None):
+    if config_override is None:
+        config_path = get_config_path(config_name)
+        print(f"Loading config from {config_path}")
+        config = load_yaml(config_path)
+    else:
+        print(f"Loading config from client payload for {config_name}")
+        config = config_override
 
     protocol = config["protocol"]
     packaging_type = config["packaging_type"]
@@ -126,6 +133,75 @@ def run_single_test(config_name: str, host: str, port: int):
     return success
 
 
+def control_server(host: str, control_port: int):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((host, control_port))
+    server_socket.listen(5)
+
+    print(f"Control server listening on {host}:{control_port}")
+
+    try:
+        while True:
+            print("Waiting for control client...")
+            conn, addr = server_socket.accept()
+            print(f"Control client connected from {addr}")
+
+            with conn:
+                try:
+                    request = recv_json_message(conn)
+                    if request.get("type") != "start_test":
+                        raise ValueError(f"Unsupported control message: {request.get('type')}")
+
+                    config_name = request["config_name"]
+                    config = request["config"]
+                    protocol = config["protocol"]
+
+                    if protocol in {"tcp", "web"}:
+                        data_port = get_free_port(socket.SOCK_STREAM)
+                    elif protocol == "udp":
+                        data_port = get_free_port(socket.SOCK_DGRAM)
+                    else:
+                        raise NotImplementedError(f"Unsupported protocol: {protocol}")
+
+                    worker = threading.Thread(
+                        target=run_single_test,
+                        args=(config_name, host, data_port, config),
+                        daemon=False,
+                    )
+                    worker.start()
+
+                    send_json_message(
+                        conn,
+                        {
+                            "status": "ready",
+                            "data_port": data_port,
+                            "protocol": protocol,
+                            "config_name": config_name,
+                        },
+                    )
+
+                    worker.join()
+                except Exception as exc:
+                    print(f"[ERROR] Control request failed: {type(exc).__name__}: {exc}")
+                    traceback.print_exc()
+                    try:
+                        send_json_message(
+                            conn,
+                            {
+                                "status": "error",
+                                "error_type": type(exc).__name__,
+                                "error_message": str(exc),
+                            },
+                        )
+                    except Exception:
+                        pass
+    except KeyboardInterrupt:
+        print("\nControl server stopped.")
+    finally:
+        server_socket.close()
+
+
 if __name__ == "__main__":
 
     args = parse_args()
@@ -152,12 +228,10 @@ if __name__ == "__main__":
                 print(f"- {config_name}")
         else:
             print("\nBatch finished successfully.")
-    else:
-        if args.test is None:
-            config_name = "default" # 采用默认配置
-            print("No test specified, using default config.")
-        else:
-            config_name = "test_" + args.test
+    elif args.test is not None:
+        config_name = "test_" + args.test
         success = run_single_test(config_name, host=args.host, port=args.port)
         if not success:
             sys.exit(1)
+    else:
+        control_server(host=args.host, control_port=args.port)

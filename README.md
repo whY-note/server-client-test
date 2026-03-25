@@ -39,19 +39,16 @@ sequenceDiagram
 ### 运行已有测试
 已有测试的配置文件请见`./config/`目录下
 
+推荐用法：
+
 For **server**:
 
 在终端运行：
 ```bash
-bash test_server.sh test_num --host 0.0.0.0 --port 9000
+bash test_server.sh --host 0.0.0.0 --port 9000
 ```
 
-`test_num`代表测试序号,可选1~15
-
-例如：
-```bash
-bash test_server.sh 1 --host 0.0.0.0 --port 9000
-```
+这会启动一个固定 JSON 控制通道。server 不再需要本地指定 `--all` 或 `test_num`，而是等待 client 把每轮测试配置发过来。
 
 For **client**:
 
@@ -67,13 +64,18 @@ bash test_client.sh test_num --host localhost --port 9000
 bash test_client.sh 1 --host localhost --port 9000
 ```
 
+> [!NOTE]
+>
+> `--port` 现在默认表示 **server 控制端口**。
+> client 会先通过控制通道把 `config` 发给 server，收到动态分配的数据端口后，再发起真正的 TCP / Web / UDP 测试连接。
+
 ### 一次跑完全部测试配置
 
 如果希望 server 和 client 各启动一次，就顺序跑完 `./config/test_*.yml` 下的全部测试，可以分别执行：
 
 For **server**:
 ```bash
-bash test_server.sh all --host 0.0.0.0 --port 9000
+bash test_server.sh --host 0.0.0.0 --port 9000
 ```
 
 For **client**:
@@ -83,14 +85,30 @@ bash test_client.sh all --host localhost --port 9000
 
 也可以直接用 Python 参数形式：
 ```bash
-python test_server.py --all --host 0.0.0.0 --port 9000
+python test_server.py --host 0.0.0.0 --port 9000
 python test_client.py --all --host localhost --port 9000
 ```
 
 > [!NOTE]
 >
-> 批量模式会按照 `test_1.yml -> test_2.yml -> ...` 的顺序依次执行。
-> client 会在切换到下一个配置时自动重连并等待 server 就绪，因此不再需要人工逐个同步。
+> server 端不再需要 `--all`。
+> 批量顺序完全由 client 控制：`test_1.yml -> test_2.yml -> ...`
+> client 会先发控制消息，再按 server 返回的数据端口建立真实连接。
+
+### 兼容旧模式
+
+如果你已经手动起好了某一个数据通道 server，也可以让 client 跳过控制通道，直接连接：
+
+```bash
+bash test_client.sh 1 --host localhost --port 7001 --direct
+```
+
+server 端旧的本地模式也还保留：
+
+```bash
+bash test_server.sh 1 --host 0.0.0.0 --port 7001
+bash test_server.sh all --host 0.0.0.0 --port 7001
+```
 
 ### 自定义测试
 
@@ -107,7 +125,7 @@ For **client**:
 > [!NOTE]
 >
 > 现在 `config/*.yml` 不再保存 `server/client` 的 `host/port`。
-> 连接地址统一通过命令行参数 `--host` 和 `--port` 传入。
+> 控制通道地址统一通过命令行参数 `--host` 和 `--port` 传入。
 
 
 ## 注意事项
