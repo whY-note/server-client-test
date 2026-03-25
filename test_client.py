@@ -24,20 +24,38 @@ def parse_args():
         default=None,
         help="User name sent to server"
     )
+    parser.add_argument(
+        "--host",
+        type=str,
+        required=False,
+        default="localhost",
+        help="Server host to connect to"
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        required=False,
+        default=9000,
+        help="Server port to connect to"
+    )
 
     args = parser.parse_args()
     return args
 
 
-def run_single_test(config_name: str, user_name: str | None = None, connect_retry_seconds: float = 0):
+def run_single_test(
+    config_name: str,
+    host: str,
+    port: int,
+    user_name: str | None = None,
+    connect_retry_seconds: float = 0,
+):
     config_path = get_config_path(config_name)
     print(f"Loading config from {config_path}")
     config = load_yaml(config_path)
 
     protocol = config["protocol"]
     packaging_type = config["packaging_type"]
-    host = config["client"]["host"]
-    port = config["client"]["port"]
 
     print("Config: ")
     print("Protocol: ", protocol)
@@ -73,6 +91,8 @@ if __name__ == "__main__":
             print(f"\n===== [{index}/{len(config_names)}] Running {config_name} =====")
             run_single_test(
                 config_name,
+                host=args.host,
+                port=args.port,
                 user_name=user_name,
                 connect_retry_seconds=30,
             )
@@ -82,4 +102,9 @@ if __name__ == "__main__":
             print("No test specified, using default config.")
         else:
             config_name = "test_" + args.test
-        run_single_test(config_name, user_name=args.user_name)
+        run_single_test(
+            config_name,
+            host=args.host,
+            port=args.port,
+            user_name=args.user_name,
+        )

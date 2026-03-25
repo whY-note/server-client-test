@@ -43,28 +43,28 @@ For **server**:
 
 在终端运行：
 ```bash
-bash test_server.sh test_num
+bash test_server.sh test_num --host 0.0.0.0 --port 9000
 ```
 
 `test_num`代表测试序号,可选1~15
 
 例如：
 ```bash
-bash test_server.sh 1
+bash test_server.sh 1 --host 0.0.0.0 --port 9000
 ```
 
 For **client**:
 
 在终端运行：
 ```bash
-bash test_client.sh test_num
+bash test_client.sh test_num --host localhost --port 9000
 ```
 
 `test_num`代表测试序号,可选1~15
 
 例如：
 ```bash
-bash test_client.sh 1
+bash test_client.sh 1 --host localhost --port 9000
 ```
 
 ### 一次跑完全部测试配置
@@ -73,18 +73,18 @@ bash test_client.sh 1
 
 For **server**:
 ```bash
-bash test_server.sh all
+bash test_server.sh all --host 0.0.0.0 --port 9000
 ```
 
 For **client**:
 ```bash
-bash test_client.sh all
+bash test_client.sh all --host localhost --port 9000
 ```
 
 也可以直接用 Python 参数形式：
 ```bash
-python test_server.py --all
-python test_client.py --all
+python test_server.py --all --host 0.0.0.0 --port 9000
+python test_client.py --all --host localhost --port 9000
 ```
 
 > [!NOTE]
@@ -96,13 +96,18 @@ python test_client.py --all
 
 For **server**:
 
-1. 在`./config/config.yml`中的`client`下的`host`写入服务器的IP地址(若使用了隧道，则写`localhost`即可)；然后指定本次测试的**协议 (`protocol`)**, **序列化方法(`packaging_type`)**
-2. 运行测试: `python test_server.py`
+1. 在 `./config/` 下准备配置文件，只保留本次测试的**协议 (`protocol`)**、**序列化方法(`packaging_type`)**、测试文件等测试参数
+2. 运行测试: `python test_server.py --host 0.0.0.0 --port 9000`
 
 For **client**:
 
-1. 如果是在两台不同的机器上测试，则根据server所做的修改进行修改；如果是在同一台机器上测试，则不需再改（因为Python脚本会与server读取同一个config文件）
-2. 等待server启动运行后，运行测试: `python test_client.py`
+1. 在配置文件中指定本次测试的**协议 (`protocol`)**、**序列化方法(`packaging_type`)**；连接地址通过启动参数传入
+2. 等待server启动运行后，运行测试: `python test_client.py --host localhost --port 9000`
+
+> [!NOTE]
+>
+> 现在 `config/*.yml` 不再保存 `server/client` 的 `host/port`。
+> 连接地址统一通过命令行参数 `--host` 和 `--port` 传入。
 
 
 ## 注意事项

@@ -20,6 +20,20 @@ def parse_args():
         action="store_true",
         help="Run all ./config/test_*.yml configs in order"
     )
+    parser.add_argument(
+        "--host",
+        type=str,
+        required=False,
+        default="0.0.0.0",
+        help="Server bind host"
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        required=False,
+        default=9000,
+        help="Server bind port"
+    )
 
     args = parser.parse_args()
     return args
@@ -46,15 +60,13 @@ def record_result(res, config_name):
         df.to_csv(file_path, mode="w", header=True, index=False)
 
 
-def run_single_test(config_name: str):
+def run_single_test(config_name: str, host: str, port: int):
     config_path = get_config_path(config_name)
     print(f"Loading config from {config_path}")
     config = load_yaml(config_path)
 
     protocol = config["protocol"]
     packaging_type = config["packaging_type"]
-    host = config["server"]["host"]
-    port = config["server"]["port"]
     is_jpeg = config["is_jpeg"]
 
     print("Config: ")
@@ -104,12 +116,11 @@ if __name__ == "__main__":
         print(f"Batch mode enabled, total configs: {len(config_names)}")
         for index, config_name in enumerate(config_names, start=1):
             print(f"\n===== [{index}/{len(config_names)}] Running {config_name} =====")
-            run_single_test(config_name)
+            run_single_test(config_name, host=args.host, port=args.port)
     else:
         if args.test is None:
             config_name = "default" # 采用默认配置
             print("No test specified, using default config.")
         else:
             config_name = "test_" + args.test
-        run_single_test(config_name)
-
+        run_single_test(config_name, host=args.host, port=args.port)
