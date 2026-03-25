@@ -83,10 +83,16 @@ For **client**:
 bash test_client.sh all --host localhost --port 9000
 ```
 
+如果只想在批量模式下跑 `is_jpeg: true` 的配置：
+```bash
+bash test_client.sh all --host localhost --port 9000 --jpeg-only
+```
+
 也可以直接用 Python 参数形式：
 ```bash
 python test_server.py --host 0.0.0.0 --port 9000
 python test_client.py --all --host localhost --port 9000
+python test_client.py --all --host localhost --port 9000 --jpeg-only
 ```
 
 > [!NOTE]

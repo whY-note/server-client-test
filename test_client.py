@@ -44,6 +44,11 @@ def parse_args():
         action="store_true",
         help="Connect directly to a pre-started data server without control plane"
     )
+    parser.add_argument(
+        "--jpeg-only",
+        action="store_true",
+        help="When used with --all, only run configs whose is_jpeg is true"
+    )
 
     args = parser.parse_args()
     return args
@@ -113,8 +118,21 @@ if __name__ == "__main__":
         if not config_names:
             raise FileNotFoundError("No test configs found under ./config/test_*.yml")
 
+        if args.jpeg_only:
+            filtered_config_names = []
+            for config_name in config_names:
+                config = load_yaml(get_config_path(config_name))
+                if config.get("is_jpeg") is True:
+                    filtered_config_names.append(config_name)
+            config_names = filtered_config_names
+
+        if not config_names:
+            raise FileNotFoundError("No matching test configs found for the selected filters.")
+
         user_name = args.user_name if args.user_name is not None else input_user_name()
         print(f"Batch mode enabled, total configs: {len(config_names)}")
+        if args.jpeg_only:
+            print("Filter enabled: only running configs with is_jpeg = true")
 
         for index, config_name in enumerate(config_names, start=1):
             print(f"\n===== [{index}/{len(config_names)}] Running {config_name} =====")
