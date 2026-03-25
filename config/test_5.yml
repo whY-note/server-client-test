@@ -1,0 +1,12 @@
+protocol: tcp # <-- change this to the protocol you want to use (tcp or web)
+packaging_type: pickle # <-- change this to the packaging method you want to use (json, msgpack or pickle)
+test_file_name: episode0.hdf5
+is_jpeg: false
+
+server:
+  host: 0.0.0.0    # <-- no need to change this unless you want to bind to a specific interface
+  port: 9000
+
+client:
+  host: localhost  # <-- change this to the server's IP address if running on different machines
+  port: 9000
