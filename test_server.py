@@ -1,4 +1,4 @@
-from src.utils.utils import load_yaml
+from src.utils.utils import load_yaml, get_config_path, list_test_config_names
 from src.api.run_server import run_udp, run_tcp, run_web
 import asyncio
 import os
@@ -14,6 +14,11 @@ def parse_args():
         required=False,
         default=None,
         help="Test number"
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Run all ./config/test_*.yml configs in order"
     )
 
     args = parser.parse_args()
@@ -41,16 +46,8 @@ def record_result(res, config_name):
         df.to_csv(file_path, mode="w", header=True, index=False)
 
 
-if __name__ == "__main__":
-
-    args = parse_args()
-
-    if args.test is None:
-        config_name = "default" # 采用默认配置
-        print("No test specified, using default config.")
-    else:
-        config_name = "test_" + args.test
-    config_path = "./config/"+ config_name +".yml"
+def run_single_test(config_name: str):
+    config_path = get_config_path(config_name)
     print(f"Loading config from {config_path}")
     config = load_yaml(config_path)
 
@@ -90,6 +87,29 @@ if __name__ == "__main__":
     
     # 保存结果
     record_result(res, config_name)
-    
 
+
+if __name__ == "__main__":
+
+    args = parse_args()
+
+    if args.all and args.test is not None:
+        raise ValueError("--all and --test cannot be used together.")
+
+    if args.all:
+        config_names = list_test_config_names()
+        if not config_names:
+            raise FileNotFoundError("No test configs found under ./config/test_*.yml")
+
+        print(f"Batch mode enabled, total configs: {len(config_names)}")
+        for index, config_name in enumerate(config_names, start=1):
+            print(f"\n===== [{index}/{len(config_names)}] Running {config_name} =====")
+            run_single_test(config_name)
+    else:
+        if args.test is None:
+            config_name = "default" # 采用默认配置
+            print("No test specified, using default config.")
+        else:
+            config_name = "test_" + args.test
+        run_single_test(config_name)
 

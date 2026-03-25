@@ -67,6 +67,31 @@ bash test_client.sh test_num
 bash test_client.sh 1
 ```
 
+### 一次跑完全部测试配置
+
+如果希望 server 和 client 各启动一次，就顺序跑完 `./config/test_*.yml` 下的全部测试，可以分别执行：
+
+For **server**:
+```bash
+bash test_server.sh all
+```
+
+For **client**:
+```bash
+bash test_client.sh all
+```
+
+也可以直接用 Python 参数形式：
+```bash
+python test_server.py --all
+python test_client.py --all
+```
+
+> [!NOTE]
+>
+> 批量模式会按照 `test_1.yml -> test_2.yml -> ...` 的顺序依次执行。
+> client 会在切换到下一个配置时自动重连并等待 server 就绪，因此不再需要人工逐个同步。
+
 ### 自定义测试
 
 For **server**:

@@ -382,4 +382,9 @@ async def run_web(host, port, packaging_type, test_file_path, is_jpeg: bool):
 
     except KeyboardInterrupt:
         print("Shutting down server...")
+    finally:
         server_task.cancel()
+        try:
+            await server_task
+        except asyncio.CancelledError:
+            pass
