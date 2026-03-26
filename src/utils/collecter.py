@@ -1,5 +1,6 @@
 import h5py
 import numpy as np
+import os
 
 class Collector:
 
@@ -46,6 +47,9 @@ class Collector:
             )
 
     def save_hdf5(self, hdf5_path):
+
+        parent_dir = os.path.dirname(os.path.abspath(hdf5_path))
+        os.makedirs(parent_dir, exist_ok=True)
 
         with h5py.File(hdf5_path, "w") as f:
 
