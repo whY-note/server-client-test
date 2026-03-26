@@ -1,6 +1,6 @@
 from src.utils.utils import load_yaml, get_config_path, list_test_config_names
 from src.api.run_server import run_udp, run_tcp, run_web
-from src.api.control_plane import recv_json_message, send_json_message, get_free_port
+from src.api.control_plane import recv_json_message, send_json_message, DEFAULT_DATA_PORTS
 import asyncio
 import os
 import pandas as pd
@@ -160,7 +160,7 @@ def run_single_test(config_name: str, host: str, port: int, config_override: dic
     return success
 
 
-def control_server(host: str, control_port: int):
+def control_server(host: str, control_port: int, worker_host: str = "0.0.0.0"):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((host, control_port))
@@ -184,16 +184,13 @@ def control_server(host: str, control_port: int):
                     config = request["config"]
                     protocol = config["protocol"]
 
-                    if protocol in {"tcp", "web"}:
-                        data_port = get_free_port(socket.SOCK_STREAM)
-                    elif protocol == "udp":
-                        data_port = get_free_port(socket.SOCK_DGRAM)
-                    else:
+                    if protocol not in DEFAULT_DATA_PORTS:
                         raise NotImplementedError(f"Unsupported protocol: {protocol}")
+                    data_port = DEFAULT_DATA_PORTS[protocol]
 
                     worker = threading.Thread(
                         target=run_single_test,
-                        args=(config_name, host, data_port, config),
+                        args=(config_name, worker_host, data_port, config),
                         daemon=True,
                     )
                     worker.start()

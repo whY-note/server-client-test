@@ -64,6 +64,10 @@ python test_client.py --all --host localhost --port 9000 --jpeg-only
 > [!NOTE]
 >
 > client 会先发控制消息，再按 server 返回的数据端口建立真实连接。
+> 控制模式下固定数据端口为：
+> `tcp -> 7101`
+> `web -> 7102`
+> `udp -> 7103`
 > 如果不是本地测试，请把`localhost`改成server的 IP地址
 
 ### 兼容旧模式
@@ -112,7 +116,8 @@ bash test_client.sh 1 --host localhost --port 9000
 > [!NOTE]
 >
 > `--port` 现在默认表示 **server 控制端口**。
-> client 会先通过控制通道把 `config` 发给 server，收到动态分配的数据端口后，再发起真正的 TCP / Web / UDP 测试连接。
+> client 会先通过控制通道把 `config` 发给 server，再连接固定数据端口：
+> `tcp -> 7101`、`web -> 7102`、`udp -> 7103`。
 
 
 ### 自定义测试
@@ -131,6 +136,62 @@ For **client**:
 >
 > 现在 `config/*.yml` 不再保存 `server/client` 的 `host/port`。
 > 控制通道地址统一通过命令行参数 `--host` 和 `--port` 传入。
+
+### FRP 示例
+
+如果使用 `frp` 做内网穿透，建议把控制端口和 3 个固定数据端口都映射出来。
+
+本地 server：
+```bash
+bash test_server.sh --host 0.0.0.0 --port 7001
+```
+
+本地固定端口：
+```text
+7001 -> 控制通道
+7101 -> TCP 数据通道
+7102 -> Web 数据通道
+7103 -> UDP 数据通道
+```
+
+`frpc.toml` 示例：
+```toml
+serverAddr = "47.112.197.178"
+serverPort = 7001
+
+[[proxies]]
+name = "server-client-control"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 7001
+remotePort = 6001
+
+[[proxies]]
+name = "server-client-tcp"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 7101
+remotePort = 7101
+
+[[proxies]]
+name = "server-client-web"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 7102
+remotePort = 7102
+
+[[proxies]]
+name = "server-client-udp"
+type = "udp"
+localIP = "127.0.0.1"
+localPort = 7103
+remotePort = 7103
+```
+
+远端 client：
+```bash
+bash test_client.sh all --host 47.112.197.178 --port 6001
+```
 
 
 ## 注意事项
