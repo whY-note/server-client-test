@@ -4,6 +4,7 @@ import os
 import socket
 import json
 import struct
+from typing import Optional
 from src.utils.collecter import Collector
 
 from src.serializer import create_serializer
@@ -15,7 +16,7 @@ class TCPClient(BaseClient):
         self.collector = Collector()
         self.serializer = create_serializer(packaging_type)
 
-    def connect(self, host, port, connect_timeout: float | None = 10.0, io_timeout: float | None = 10.0):
+    def connect(self, host, port, connect_timeout: Optional[float] = 10.0, io_timeout: Optional[float] = 10.0):
         self.host = host
         self.port = port
 

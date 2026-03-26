@@ -9,6 +9,7 @@ import traceback
 import sys
 import socket
 import threading
+from typing import Optional
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Test server script")
@@ -69,7 +70,7 @@ def record_result(res, config_name):
         df.to_csv(file_path, mode="w", header=True, index=False)
 
 
-def run_single_test(config_name: str, host: str, port: int, config_override: dict | None = None):
+def run_single_test(config_name: str, host: str, port: int, config_override: Optional[dict] = None):
     if config_override is None:
         config_path = get_config_path(config_name)
         print(f"Loading config from {config_path}")

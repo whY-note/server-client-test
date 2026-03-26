@@ -8,12 +8,11 @@ Default behavior matches the manual processing done in this workspace:
 - Keep only the required identity columns and key metrics
 """
 
-from __future__ import annotations
-
 import argparse
 import csv
 import sys
 from pathlib import Path
+from typing import List, Tuple
 
 
 REQUIRED_COLUMNS = [
@@ -51,13 +50,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def collect_csv_files(input_dir: Path, output_path: Path) -> list[Path]:
+def collect_csv_files(input_dir: Path, output_path: Path) -> List[Path]:
     files = sorted(input_dir.rglob("*.csv"))
     output_resolved = output_path.resolve()
     return [f for f in files if f.resolve() != output_resolved]
 
 
-def summarize(csv_files: list[Path], output_path: Path) -> tuple[int, int]:
+def summarize(csv_files: List[Path], output_path: Path) -> Tuple[int, int]:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     file_count = 0

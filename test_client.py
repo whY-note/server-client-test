@@ -2,6 +2,7 @@ from src.utils.utils import load_yaml, get_config_path, list_test_config_names
 from src.api.run_client import run_client, input_user_name
 from src.api.control_plane import request_test_session
 import argparse
+from typing import Optional
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Test server script")
@@ -58,7 +59,7 @@ def run_single_test(
     config_name: str,
     host: str,
     port: int,
-    user_name: str | None = None,
+    user_name: Optional[str] = None,
     connect_retry_seconds: float = 0,
     direct: bool = False,
 ):

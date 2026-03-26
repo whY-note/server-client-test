@@ -12,6 +12,7 @@ import h5py
 import math
 import numpy as np
 import time
+from typing import Dict, List
 
 
 def _build_obs(
@@ -128,7 +129,7 @@ def _estimate_serialized_sizes(
     return payload_bytes, wire_bytes
 
 
-def _safe_stats(samples: list[float], prefix: str) -> dict:
+def _safe_stats(samples: List[float], prefix: str) -> Dict:
     if not samples:
         return {
             f"total_{prefix}": 0.0,
@@ -157,11 +158,11 @@ def _build_result(
     test_num: int,
     decode_time_total: float,
     total_elapsed_time: float,
-    rtt_samples: list[float],
-    obs_payload_samples: list[float],
-    obs_wire_samples: list[float],
-    action_payload_samples: list[float],
-    action_wire_samples: list[float],
+    rtt_samples: List[float],
+    obs_payload_samples: List[float],
+    obs_wire_samples: List[float],
+    action_payload_samples: List[float],
+    action_wire_samples: List[float],
     timeout_count: int,
 ):
     rtt_array = np.asarray(rtt_samples, dtype=np.float64) if rtt_samples else np.asarray([], dtype=np.float64)

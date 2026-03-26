@@ -9,6 +9,7 @@ from websockets.exceptions import ConnectionClosedError
 from src.utils.utils import jpeg_to_img
 import re
 import time
+from typing import Optional
 
 def create_client(protocol, packaging_type) -> BaseClient:
     if protocol == "tcp":
@@ -80,7 +81,7 @@ def run_client(
     host,
     port,
     packaging_type,
-    user_name: str | None = None,
+    user_name: Optional[str] = None,
     connect_retry_seconds: float = 0,
     retry_interval: float = 1.0,
     connect_timeout_seconds: float = 10.0,

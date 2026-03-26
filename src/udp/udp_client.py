@@ -4,6 +4,7 @@ import os
 import socket
 import time
 import json
+from typing import Optional
 
 from src.utils.collecter import Collector
 
@@ -20,7 +21,7 @@ class UDPClient(BaseClient):
         self.recv_buffer = {}
         self.serializer = create_serializer(packaging_type)
 
-    def connect(self, host, port, connect_timeout: float | None = None, io_timeout: float | None = 10.0, max_size = None):
+    def connect(self, host, port, connect_timeout: Optional[float] = None, io_timeout: Optional[float] = 10.0, max_size = None):
         # 这里并不是真正的连接，因为UDP是无连接的协议，但我们需要记录服务器的地址以便发送数据
         self.server_addr = (host, port) # 打包成二元组
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

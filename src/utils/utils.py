@@ -4,6 +4,7 @@ import yaml
 import glob
 import os
 import re
+from typing import List, Optional
 
 def jpeg_to_img(jpeg_bytes):
     ''' 将 JPEG bytes 解码为 原始帧'''
@@ -26,13 +27,13 @@ def get_project_root() -> str:
     return os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
 
-def get_config_path(config_name: str, config_dir: str | None = None) -> str:
+def get_config_path(config_name: str, config_dir: Optional[str] = None) -> str:
     if config_dir is None:
         config_dir = os.path.join(get_project_root(), "config")
     return os.path.join(config_dir, f"{config_name}.yml")
 
 
-def list_test_config_names(config_dir: str | None = None) -> list[str]:
+def list_test_config_names(config_dir: Optional[str] = None) -> List[str]:
     if config_dir is None:
         config_dir = os.path.join(get_project_root(), "config")
 

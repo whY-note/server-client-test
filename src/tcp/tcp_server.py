@@ -7,9 +7,10 @@ from src.base.base_server import BaseServer
 import time
 import sys
 from src.serializer import create_serializer
+from typing import Optional
 
 class TCPServer(BaseServer):
-    def __init__(self, host = "0.0.0.0", port = 12000, packaging_type="json", io_timeout: float | None = 10.0, accept_timeout: float | None = None):
+    def __init__(self, host = "0.0.0.0", port = 12000, packaging_type="json", io_timeout: Optional[float] = 10.0, accept_timeout: Optional[float] = None):
         super().__init__()
         self.host = host
         self.port = port

@@ -4,6 +4,7 @@ import numpy as np
 import os
 import json
 import struct
+from typing import Optional
 from src.utils.collecter import Collector
 
 from src.serializer.json_serializer import numpy_to_json, json_to_numpy
@@ -19,7 +20,7 @@ class WebClient(BaseClient):
         self.io_timeout = 10.0
         # self.packer = msgpack_numpy.Packer()
     
-    def connect(self, host, port, connect_timeout: float | None = 10.0, io_timeout: float | None = 10.0, max_size = None):
+    def connect(self, host, port, connect_timeout: Optional[float] = 10.0, io_timeout: Optional[float] = 10.0, max_size = None):
         self.server_url = "ws://" + host + ":" + str(port)
         print(f"url:{self.server_url}")
         self.io_timeout = io_timeout if io_timeout and io_timeout > 0 else None

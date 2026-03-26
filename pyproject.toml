@@ -7,14 +7,14 @@ name = "server-client-test"
 version = "0.1.0"
 description = "Policy server/client communication test toolkit"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 dependencies = [
-  "numpy",
-  "pandas",
+  "numpy<2.0",
+  "pandas<2.1",
   "PyYAML",
   "h5py",
   "msgpack",
-  "websockets",
+  "websockets<13",
   "opencv-python",
 ]
 

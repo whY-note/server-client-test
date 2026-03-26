@@ -5,12 +5,13 @@ import time
 import sys
 import struct
 import json
+from typing import Optional
 
 from src.serializer import create_serializer
 from src.udp.udp_config import *
 
 class UDPServer(BaseServer):
-    def __init__(self, host, port, packaging_type="json", io_timeout: float | None = 10.0):
+    def __init__(self, host, port, packaging_type="json", io_timeout: Optional[float] = 10.0):
         super().__init__()
         
         self.host = host
