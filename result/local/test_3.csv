@@ -1,2 +1,0 @@
-user_name,packaging_type,test_num,avg_decode_time,avg_RTT,protocol,config,is_jpeg
-qqq,msgpack,100,0.015790000000124566,0.03732999999985623,tcp,test_3,False

@@ -1,3 +1,0 @@
-user_name,packaging_type,test_num,avg_decode_time,avg_RTT,protocol,config,is_jpeg
-qqq,json,100,0.0,0.010939999999973225,udp,test_11,True
-qqq,json,100,0.0,0.010789999999979046,udp,test_11,True
