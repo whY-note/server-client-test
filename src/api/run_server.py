@@ -216,7 +216,13 @@ def _build_result(
     return result
 
 
-def _run_sync_test(server, protocol: str, packaging_type: str, test_file_path, is_jpeg: bool):
+def _run_sync_test(
+    server,
+    protocol: str,
+    packaging_type: str,
+    test_file_path,
+    is_jpeg: bool,
+):
     serializer = create_serializer(packaging_type)
     user_name = "unknown_user"
 
@@ -278,19 +284,25 @@ def _run_sync_test(server, protocol: str, packaging_type: str, test_file_path, i
 
                 round_trip_start = time.monotonic()
                 server.post_obs(obs)
-                action = server.get_action()
+                action = None
+                try:
+                    action = server.get_action()
+                except TimeoutError:
+                    timeout_count += 1
+                    print("No action received (timeout)")
                 round_trip_duration = time.monotonic() - round_trip_start
                 rtt_samples.append(round_trip_duration)
 
-                action_payload_bytes, action_wire_bytes = _estimate_serialized_sizes(
-                    protocol,
-                    packaging_type,
-                    serializer,
-                    "action",
-                    action,
-                )
-                action_payload_samples.append(action_payload_bytes)
-                action_wire_samples.append(action_wire_bytes)
+                if action is not None:
+                    action_payload_bytes, action_wire_bytes = _estimate_serialized_sizes(
+                        protocol,
+                        packaging_type,
+                        serializer,
+                        "action",
+                        action,
+                    )
+                    action_payload_samples.append(action_payload_bytes)
+                    action_wire_samples.append(action_wire_bytes)
 
             total_elapsed_time = time.monotonic() - start_time
 
@@ -314,18 +326,44 @@ def _run_sync_test(server, protocol: str, packaging_type: str, test_file_path, i
         server.close()
 
 
-def run_udp(host, port, packaging_type, test_file_path, is_jpeg: bool):
-    server = UDPServer(host, port, packaging_type)
+def run_udp(host, port, packaging_type, test_file_path, is_jpeg: bool, io_timeout_seconds: float = 10.0):
+    server = UDPServer(host, port, packaging_type, io_timeout=io_timeout_seconds)
     return _run_sync_test(server, "udp", packaging_type, test_file_path, is_jpeg)
 
 
-def run_tcp(host, port, packaging_type, test_file_path, is_jpeg: bool):
-    server = TCPServer(host, port, packaging_type)
-    server.accept_connection()
+def run_tcp(
+    host,
+    port,
+    packaging_type,
+    test_file_path,
+    is_jpeg: bool,
+    io_timeout_seconds: float = 10.0,
+    accept_timeout_seconds: float = 0.0,
+):
+    server = TCPServer(
+        host,
+        port,
+        packaging_type,
+        io_timeout=io_timeout_seconds,
+        accept_timeout=(accept_timeout_seconds if accept_timeout_seconds and accept_timeout_seconds > 0 else None),
+    )
+    try:
+        server.accept_connection()
+    except Exception:
+        server.close()
+        raise
     return _run_sync_test(server, "tcp", packaging_type, test_file_path, is_jpeg)
 
 
-async def run_web(host, port, packaging_type, test_file_path, is_jpeg: bool):
+async def run_web(
+    host,
+    port,
+    packaging_type,
+    test_file_path,
+    is_jpeg: bool,
+    action_timeout_seconds: float = 10.0,
+    connection_timeout_seconds: float = 30.0,
+):
     server = WebServer(host, port, packaging_type)
     serializer = create_serializer(packaging_type)
     user_name = "unknown_user"
@@ -334,10 +372,10 @@ async def run_web(host, port, packaging_type, test_file_path, is_jpeg: bool):
 
     try:
         print("Waiting for client...")
-        await server._connected_event.wait()
+        await asyncio.wait_for(server._connected_event.wait(), timeout=connection_timeout_seconds)
         print("Client connected!")
 
-        user_name_dict = await server._recv_msg()
+        user_name_dict = await asyncio.wait_for(server._recv_msg(), timeout=action_timeout_seconds)
 
         if user_name_dict.get("type") == "user_name":
             user_name = user_name_dict.get("user_name", "unknown_user")
@@ -397,7 +435,7 @@ async def run_web(host, port, packaging_type, test_file_path, is_jpeg: bool):
 
                 action = None
                 try:
-                    action = await server.get_action(timeout=10)
+                    action = await server.get_action(timeout=action_timeout_seconds)
                     print("Received action:", action)
                 except TimeoutError:
                     timeout_count += 1

@@ -68,6 +68,8 @@ def run_single_test(
 
     protocol = config["protocol"]
     packaging_type = config["packaging_type"]
+    connect_timeout_seconds = float(config.get("connect_timeout_seconds", 10.0))
+    io_timeout_seconds = float(config.get("io_timeout_seconds", 10.0))
 
     print("Config: ")
     print("Protocol: ", protocol)
@@ -104,6 +106,8 @@ def run_single_test(
         packaging_type,
         user_name=user_name,
         connect_retry_seconds=connect_retry_seconds,
+        connect_timeout_seconds=connect_timeout_seconds,
+        io_timeout_seconds=io_timeout_seconds,
     )
 
 if __name__ == "__main__":

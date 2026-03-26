@@ -5,3 +5,8 @@ protocol: web                 # <-- change this to the protocol you want to use 
 packaging_type: pickle        # <-- change this to the packaging method you want to use (json, msgpack or pickle)
 test_file_name: episode0.hdf5
 is_jpeg: true
+connect_timeout_seconds: 10.0   # client connect timeout
+io_timeout_seconds: 10.0        # tcp/udp client and server I/O timeout
+action_timeout_seconds: 10.0    # web server wait timeout for action/user_name
+connection_timeout_seconds: 30.0 # web server timeout waiting for first client
+accept_timeout_seconds: 0.0     # tcp server accept timeout, <=0 means no timeout

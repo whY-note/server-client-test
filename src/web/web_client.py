@@ -16,15 +16,18 @@ class WebClient(BaseClient):
         self.collector = Collector()
         self.serializer = create_serializer(packaging_type)
         self.ws = None
+        self.io_timeout = 10.0
         # self.packer = msgpack_numpy.Packer()
     
-    def connect(self, host, port, max_size = None):
+    def connect(self, host, port, connect_timeout: float | None = 10.0, io_timeout: float | None = 10.0, max_size = None):
         self.server_url = "ws://" + host + ":" + str(port)
         print(f"url:{self.server_url}")
-        self.ws = websockets.sync.client.connect(self.server_url, max_size = max_size)
+        self.io_timeout = io_timeout if io_timeout and io_timeout > 0 else None
+        open_timeout = connect_timeout if connect_timeout and connect_timeout > 0 else None
+        self.ws = websockets.sync.client.connect(self.server_url, max_size = max_size, open_timeout=open_timeout)
 
     def _recv_msg(self):
-        message = self.ws.recv()  # 阻塞等待
+        message = self.ws.recv(timeout=self.io_timeout)  # 阻塞等待
         data = self.serializer.deserialize(message)
         return data
     

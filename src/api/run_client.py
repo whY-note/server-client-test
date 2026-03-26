@@ -38,14 +38,27 @@ def validate_user_name(user_name: str) -> str:
 
     return user_name
 
-def connect_with_retry(client, host, port, connect_retry_seconds: float, retry_interval: float):
+def connect_with_retry(
+    client,
+    host,
+    port,
+    connect_retry_seconds: float,
+    retry_interval: float,
+    connect_timeout_seconds: float,
+    io_timeout_seconds: float,
+):
     deadline = time.monotonic() + connect_retry_seconds
     attempt = 0
 
     while True:
         attempt += 1
         try:
-            client.connect(host, port)
+            client.connect(
+                host,
+                port,
+                connect_timeout=connect_timeout_seconds,
+                io_timeout=io_timeout_seconds,
+            )
             return
         except KeyboardInterrupt:
             raise
@@ -70,6 +83,8 @@ def run_client(
     user_name: str | None = None,
     connect_retry_seconds: float = 0,
     retry_interval: float = 1.0,
+    connect_timeout_seconds: float = 10.0,
+    io_timeout_seconds: float = 10.0,
 ):
     client = create_client(protocol, packaging_type)
     connected = False
@@ -81,6 +96,8 @@ def run_client(
             port,
             connect_retry_seconds=connect_retry_seconds,
             retry_interval=retry_interval,
+            connect_timeout_seconds=connect_timeout_seconds,
+            io_timeout_seconds=io_timeout_seconds,
         )
         connected = True
         print("[INFO] Connected.")
@@ -94,7 +111,11 @@ def run_client(
         client._send_msg({"type": "user_name", "user_name": user_name})
     
         while True:
-            finished = client.step()
+            try:
+                finished = client.step()
+            except TimeoutError as exc:
+                print(f"[WARN] {exc}")
+                break
             if finished:
                 break
     except KeyboardInterrupt:

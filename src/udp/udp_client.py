@@ -20,10 +20,12 @@ class UDPClient(BaseClient):
         self.recv_buffer = {}
         self.serializer = create_serializer(packaging_type)
 
-    def connect(self, host, port, max_size = None):
+    def connect(self, host, port, connect_timeout: float | None = None, io_timeout: float | None = 10.0, max_size = None):
         # 这里并不是真正的连接，因为UDP是无连接的协议，但我们需要记录服务器的地址以便发送数据
         self.server_addr = (host, port) # 打包成二元组
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        if io_timeout is not None and io_timeout > 0:
+            self.client_socket.settimeout(io_timeout)
         print(f"UDP Client ready to send to {host}:{port}")
 
         # # 发送第一条信息给服务器，触发服务器记录客户端地址
@@ -59,7 +61,10 @@ class UDPClient(BaseClient):
             self.client_socket.sendto(packet, self.server_addr)
 
     def _recv_all(self):
-        packet, addr = self.client_socket.recvfrom(65536)
+        try:
+            packet, addr = self.client_socket.recvfrom(65536)
+        except socket.timeout as exc:
+            raise TimeoutError("Timed out while waiting for UDP server data.") from exc
 
         header = packet[:HEADER_SIZE]
         chunk = packet[HEADER_SIZE:]
@@ -118,7 +123,8 @@ class UDPClient(BaseClient):
         return False
 
     def close(self):
-        self.client_socket.close()
+        if hasattr(self, "client_socket") and self.client_socket is not None:
+            self.client_socket.close()
 
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         file_dir = os.path.join(BASE_DIR, "../../data")

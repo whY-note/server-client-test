@@ -2,3 +2,8 @@ protocol: web # <-- change this to the protocol you want to use (tcp or web)
 packaging_type: msgpack # <-- change this to the packaging method you want to use (json, msgpack or pickle)
 test_file_name: episode0.hdf5
 is_jpeg: true
+connect_timeout_seconds: 10.0
+io_timeout_seconds: 10.0
+action_timeout_seconds: 10.0
+connection_timeout_seconds: 30.0
+accept_timeout_seconds: 0.0

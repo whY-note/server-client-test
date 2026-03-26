@@ -135,6 +135,18 @@ For **client**:
 
 ## 注意事项
 
+### 超时与退出
+
+可以在配置文件中设置以下超时参数（不填则使用默认值）：
+
+- `connect_timeout_seconds`: client 建连超时
+- `io_timeout_seconds`: TCP/UDP 收发超时
+- `action_timeout_seconds`: Web 模式等待 action/user_name 的超时
+- `connection_timeout_seconds`: Web server 等待首个 controller 连接的超时
+- `accept_timeout_seconds`: TCP server 的 `accept` 超时（`<=0` 表示不超时）
+
+`server` 与 `client` 均支持按 `Ctrl+C` 退出，并在退出时尽量执行连接关闭与资源清理逻辑。
+
 ### 格式转化
 Be carefull: 
 

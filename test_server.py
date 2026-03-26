@@ -81,6 +81,10 @@ def run_single_test(config_name: str, host: str, port: int, config_override: dic
     protocol = config["protocol"]
     packaging_type = config["packaging_type"]
     is_jpeg = config["is_jpeg"]
+    io_timeout_seconds = float(config.get("io_timeout_seconds", 10.0))
+    action_timeout_seconds = float(config.get("action_timeout_seconds", io_timeout_seconds))
+    accept_timeout_seconds = float(config.get("accept_timeout_seconds", 0.0))
+    connection_timeout_seconds = float(config.get("connection_timeout_seconds", 30.0))
 
     print("Config: ")
     print("Protocol: ", protocol)
@@ -97,13 +101,36 @@ def run_single_test(config_name: str, host: str, port: int, config_override: dic
 
     try:
         if protocol == "tcp":
-            res = run_tcp(host = host, port = port, packaging_type = packaging_type, test_file_path = file_path, is_jpeg = is_jpeg)
+            res = run_tcp(
+                host = host,
+                port = port,
+                packaging_type = packaging_type,
+                test_file_path = file_path,
+                is_jpeg = is_jpeg,
+                io_timeout_seconds = io_timeout_seconds,
+                accept_timeout_seconds = accept_timeout_seconds,
+            )
         elif protocol == "web":
             res = asyncio.run(
-                run_web(host=host, port=port, packaging_type=packaging_type, test_file_path = file_path, is_jpeg = is_jpeg)
+                run_web(
+                    host=host,
+                    port=port,
+                    packaging_type=packaging_type,
+                    test_file_path = file_path,
+                    is_jpeg = is_jpeg,
+                    action_timeout_seconds=action_timeout_seconds,
+                    connection_timeout_seconds=connection_timeout_seconds,
+                )
                 )
         elif protocol == "udp": 
-            res = run_udp(host = host, port = port, packaging_type = packaging_type, test_file_path = file_path, is_jpeg = is_jpeg)
+            res = run_udp(
+                host = host,
+                port = port,
+                packaging_type = packaging_type,
+                test_file_path = file_path,
+                is_jpeg = is_jpeg,
+                io_timeout_seconds = io_timeout_seconds,
+            )
         else:
             raise NotImplementedError(f"Unsupported protocol: {protocol}")
 
@@ -167,7 +194,7 @@ def control_server(host: str, control_port: int):
                     worker = threading.Thread(
                         target=run_single_test,
                         args=(config_name, host, data_port, config),
-                        daemon=False,
+                        daemon=True,
                     )
                     worker.start()
 

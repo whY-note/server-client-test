@@ -15,19 +15,24 @@ class TCPClient(BaseClient):
         self.collector = Collector()
         self.serializer = create_serializer(packaging_type)
 
-    def connect(self, host, port):
+    def connect(self, host, port, connect_timeout: float | None = 10.0, io_timeout: float | None = 10.0):
         self.host = host
         self.port = port
 
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect((self.host, self.port))
+        timeout = connect_timeout if connect_timeout and connect_timeout > 0 else None
+        self.client_socket = socket.create_connection((self.host, self.port), timeout=timeout)
+        if io_timeout is not None and io_timeout > 0:
+            self.client_socket.settimeout(io_timeout)
 
         print(f"Connected to TCP Server at {self.host}:{self.port}")
         
     def _recv_all(self, size):
         data = b""
         while len(data) < size:
-            packet = self.client_socket.recv(size - len(data))
+            try:
+                packet = self.client_socket.recv(size - len(data))
+            except socket.timeout as exc:
+                raise TimeoutError("Timed out while receiving data from server.") from exc
             if not packet:
                 raise ConnectionError("Server disconnected")
             data += packet
@@ -68,7 +73,12 @@ class TCPClient(BaseClient):
         return False
         
     def close(self):
-        self.client_socket.close()
+        if hasattr(self, "client_socket") and self.client_socket is not None:
+            try:
+                self.client_socket.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            self.client_socket.close()
 
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         file_dir = os.path.join(BASE_DIR, "../../data")

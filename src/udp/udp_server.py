@@ -10,7 +10,7 @@ from src.serializer import create_serializer
 from src.udp.udp_config import *
 
 class UDPServer(BaseServer):
-    def __init__(self, host, port, packaging_type="json"):
+    def __init__(self, host, port, packaging_type="json", io_timeout: float | None = 10.0):
         super().__init__()
         
         self.host = host
@@ -19,6 +19,8 @@ class UDPServer(BaseServer):
         self.serializer = create_serializer(packaging_type)
         
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        if io_timeout is not None and io_timeout > 0:
+            self.server_socket.settimeout(io_timeout)
         self.server_socket.bind((self.host, self.port))
 
         print(f"UDP Server listening on {self.host}:{self.port}")
@@ -56,7 +58,10 @@ class UDPServer(BaseServer):
             self.server_socket.sendto(packet, self.client_addr)
         
     def _recv_all(self):
-        packet, addr = self.server_socket.recvfrom(65536)
+        try:
+            packet, addr = self.server_socket.recvfrom(65536)
+        except socket.timeout as exc:
+            raise TimeoutError("Timed out while waiting for UDP client data.") from exc
         print("received packet from:", addr)
 
         # 收集所有分片        
